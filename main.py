@@ -2,12 +2,12 @@
 import simpy
 import random
 
-RAM_Total = simpy.Container(env, init=100, capacity = 100)
 env = simpy.Environment()
-running = simpy.Ressource(env, capacity = 1)
-new = simpy.Ressource(env, capacity = 200)
-ready = simpy.Ressource(env, capacity = 100)
-waiting = simpy.Ressource(env, capacity = 200)
+RAM_Total = simpy.Container(env, init=100, capacity = 100)
+running = simpy.Resource(env, capacity = 1)
+new = simpy.Resource(env, capacity = 200)
+ready = simpy.Resource(env, capacity = 100)
+waiting = simpy.Resource(env, capacity = 200)
 
 
 
@@ -18,7 +18,7 @@ def proceso(env, nombre):
 
     with new.request() as req:
         yield req
-        print("Se ha creado el proceso %d" %(nombre))
+        print("Se ha creado el proceso %s" %(nombre))
     is_running = True
 
     while True:
@@ -42,7 +42,7 @@ def proceso(env, nombre):
                 instructions = 0
 
         if(instructions == 0):
-            print("El proceso %d ha terminado" %(nombre))
+            print("El proceso %s ha terminado" %(nombre))
             RAM_Total.put(memoria)
             is_running = False
 
@@ -58,10 +58,8 @@ def proceso(env, nombre):
                 continue
 
 
-def test():
-    RAM_Test = simpy.Container(env, init=100, capacity = 100)
-    print(RAM_Test)
-    RAM_Test.get(5)
-    print(RAM_Test)
+random.seed(10)
+for i in range(25):
+    env.process(proceso(env, 'programa %d' %(i+1)))
 
-test()
+env.run()
