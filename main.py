@@ -5,22 +5,30 @@
 #!/usr/bin/env python3
 import simpy
 import random
+import numpy as np
+
 #Declaracion de variables
 env = simpy.Environment()
-RAM_Total = simpy.Container(env, init=100, capacity = 100)
-running = simpy.Resource(env, capacity = 1)
+RAM = 100
+RAM_Total = simpy.Container(env, init=RAM, capacity = RAM)
+running = simpy.Resource(env, capacity = 2)
 new = simpy.Resource(env, capacity = 200)
 ready = simpy.Resource(env, capacity = 100)
 waiting = simpy.Resource(env, capacity = 200)
-
-
+Programas = 200
+Intervalo = 1.0
+crear = 0
+instrucciones = 3
 #Clase proceso
 def proceso(env, nombre):
+    global tiempoPromedio
+    global listaT
+    
     """Proceso que se corre dentro de una CPU"""
     #Generacion de random
-    memoria = random.expovariate(1.0/10)
+    memoria = random.randint(1,10)
 
-    instructions = random.expovariate(1.0/10)
+    instructions = random.randint(1,10)
     #Ciclo with
     with new.request() as req:
         yield req
@@ -29,29 +37,36 @@ def proceso(env, nombre):
     is_running = True
     #Ciclo while
     #Determina a partir si hay memoria disponible para llevar a cabo el proceso
-    while True:
+    while True:     
         if (memoria < RAM_Total.level):
             with ready.request() as req1:
                 yield req1
                 RAM_Total.get(memoria)
+                tiempoInicio = env.now
             break
         else:
+            yield env.timeout(1)
             continue
+        
     #Ciclo while
     while is_running:
         with running.request() as req2:
             yield req2
-            if(instructions >= 3):
-                yield env.timeout(3)
-                instructions -= 3
+            if(instructions >= instrucciones):
+                yield env.timeout(1)
+                instructions -= instrucciones
 
             else:
-                yield env.timeout(3)
+                yield env.timeout(1)
                 instructions = 0
         #Condicin al no haber instrucciones dispoibles
         if(instructions == 0):
             print("El proceso %s ha terminado" %(nombre))
             RAM_Total.put(memoria)
+            tiempoFinal = env.now
+            tiempoTotal = (tiempoFinal - tiempoInicio)
+            tiempoPromedio += tiempoTotal
+            listaT.append(tiempoTotal)
             is_running = False
         #Generacion de random para los elementos que se encuentren en la cola
         else:
@@ -65,22 +80,22 @@ def proceso(env, nombre):
                 yield req4
                 continue
 
+def crear_procesos():
+    global contador
+    for i in range(Programas):
+        c = proceso(env, 'programa %d' %(contador+1))
+        env.process(c)
+        contador += 1
+        crear = random.expovariate(1.0/Intervalo)
+        print("Proceso creado")
+        yield env.timeout(crear)
 
-#def crear_procesos():
-contador = 0
-#Ciclo for para repetir los procesos
 random.seed(10)
-while (contador != 25):
-    crear = random.expovariate(1.0/10.0)
-    crear = int(crear)
-    for i in range(crear):
-        if (contador < 25):
-            env.process(proceso(env, 'programa %d' %(contador+1)))
-            #if(crear == new.count):
-            contador += 1
-            print("Proceso creado")
-        else:
-            break
-
 #Corrida del environment
+tiempoPromedio = 0
+listaT = []
+contador = 0
+env.process(crear_procesos())
 env.run()
+print("Promedio de tiempo: %d" %(tiempoPromedio/Programas))
+print("Desviacion estandar: %d" %(np.std(listaT)))
