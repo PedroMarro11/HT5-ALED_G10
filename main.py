@@ -1,7 +1,11 @@
+#Main.py
+#Pedro Javier Marroquin Carne 21801
+#Juan Miguel Gonzalez-Campo Carne 21077
+#Paulo Raul Sanchez Gonzalez Carne 21401
 #!/usr/bin/env python3
 import simpy
 import random
-
+#Declaracion de variables 
 env = simpy.Environment()
 RAM_Total = simpy.Container(env, init=100, capacity = 100)
 running = simpy.Resource(env, capacity = 1)
@@ -10,17 +14,19 @@ ready = simpy.Resource(env, capacity = 100)
 waiting = simpy.Resource(env, capacity = 200)
 
 
-
+#Clase proceso 
 def proceso(env, nombre):
+    #Generacion de random 
     memoria = random.expovariate(1.0/10)
 
     instructions = random.expovariate(1.0/10)
-
+    #Ciclo with
     with new.request() as req:
         yield req
         print("Se ha creado el proceso %s" %(nombre))
     is_running = True
-
+    #Ciclo while
+    #Determina a partir si hay memoria disponible para llevar a cabo el proceso 
     while True:
         if (memoria < RAM_Total.level):
             with ready.request() as req1:
@@ -29,8 +35,8 @@ def proceso(env, nombre):
             break
         else:
             continue
+    #Ciclo while 
     while is_running:
-
         with running.request() as req2:
             yield req2
             if(instructions >= 3):
@@ -40,12 +46,12 @@ def proceso(env, nombre):
             else:
                 yield env.timeout(3)
                 instructions = 0
-
+        #Condicin al no haber instrucciones dispoibles
         if(instructions == 0):
             print("El proceso %s ha terminado" %(nombre))
             RAM_Total.put(memoria)
             is_running = False
-
+        #Generacion de random para los elementos que se encuentren en la cola 
         else:
             cola = random.randint(1,2)
             if(cola == 1):
@@ -57,9 +63,9 @@ def proceso(env, nombre):
                 yield req4
                 continue
 
-
+#Ciclo for para repetir los procesos 
 random.seed(10)
 for i in range(25):
     env.process(proceso(env, 'programa %d' %(i+1)))
-
+#Corrida del environment
 env.run()
