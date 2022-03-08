@@ -63,9 +63,22 @@ def proceso(env, nombre):
                 yield req4
                 continue
 
+
+
+env.run()
+
+contador = 0
 #Ciclo for para repetir los procesos 
 random.seed(10)
-for i in range(25):
-    env.process(proceso(env, 'programa %d' %(i+1)))
+while (contador != 25):
+    crear = random.expovariate(1.0/10.0)
+    for i in range(crear):
+        if (contador < 25):
+            env.process(proceso(env, 'programa %d' %(i+1)))
+            contador = contador +1
+        else:
+            break
+
+
 #Corrida del environment
-env.run()
+#env.run()
